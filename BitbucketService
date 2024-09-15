@@ -95,4 +95,16 @@ public class BitbucketService {
             JsonNode valuesNode = jsonResponse.get("values");
             List<String> unsuccessfulMerges = new ArrayList<>();
             if (valuesNode.isArray()) {
-                for (JsonNode pr : v
+                for (JsonNode pr : valuesNode) {
+                    // The actual field for checking merge status may differ; adjust accordingly
+                    boolean isMerged = pr.has("merged") && pr.get("merged").asBoolean();
+                    if (!isMerged) {
+                        String title = pr.get("title").asText();
+                        unsuccessfulMerges.add(title + " failed to merge.");
+                    }
+                }
+            }
+            return unsuccessfulMerges;
+        }
+    }
+}
