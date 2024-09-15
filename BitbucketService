@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,14 +41,15 @@ public class BitbucketService {
         try (Response response = client.newCall(request).execute()) {
             JsonNode jsonResponse = objectMapper.readTree(response.body().string());
             JsonNode valuesNode = jsonResponse.get("values");
+            List<String> pullRequests = new ArrayList<>();
             if (valuesNode.isArray()) {
-                return objectMapper.convertValue(valuesNode, objectMapper.getTypeFactory().constructCollectionType(List.class, JsonNode.class))
-                        .stream()
-                        .map(pr -> pr.get("title").asText() + " - " + pr.get("links").get("html").get("href").asText())
-                        .collect(Collectors.toList());
-            } else {
-                return List.of();
+                for (JsonNode pr : valuesNode) {
+                    String title = pr.get("title").asText();
+                    String urlLink = pr.get("links").get("html").get("href").asText();
+                    pullRequests.add(title + " - " + urlLink);
+                }
             }
+            return pullRequests;
         }
     }
 
@@ -58,14 +59,15 @@ public class BitbucketService {
         try (Response response = client.newCall(request).execute()) {
             JsonNode jsonResponse = objectMapper.readTree(response.body().string());
             JsonNode valuesNode = jsonResponse.get("values");
+            List<String> pullRequests = new ArrayList<>();
             if (valuesNode.isArray()) {
-                return objectMapper.convertValue(valuesNode, objectMapper.getTypeFactory().constructCollectionType(List.class, JsonNode.class))
-                        .stream()
-                        .map(pr -> pr.get("title").asText() + " - " + pr.get("links").get("html").get("href").asText())
-                        .collect(Collectors.toList());
-            } else {
-                return List.of();
+                for (JsonNode pr : valuesNode) {
+                    String title = pr.get("title").asText();
+                    String urlLink = pr.get("links").get("html").get("href").asText();
+                    pullRequests.add(title + " - " + urlLink);
+                }
             }
+            return pullRequests;
         }
     }
 
@@ -75,14 +77,13 @@ public class BitbucketService {
         try (Response response = client.newCall(request).execute()) {
             JsonNode jsonResponse = objectMapper.readTree(response.body().string());
             JsonNode diffsNode = jsonResponse.get("diffs").get("values");
+            List<String> diffs = new ArrayList<>();
             if (diffsNode.isArray()) {
-                return objectMapper.convertValue(diffsNode, objectMapper.getTypeFactory().constructCollectionType(List.class, JsonNode.class))
-                        .stream()
-                        .map(diff -> diff.get("diff").asText())
-                        .collect(Collectors.toList());
-            } else {
-                return List.of();
+                for (JsonNode diff : diffsNode) {
+                    diffs.add(diff.get("diff").asText());
+                }
             }
+            return diffs;
         }
     }
 
@@ -92,16 +93,6 @@ public class BitbucketService {
         try (Response response = client.newCall(request).execute()) {
             JsonNode jsonResponse = objectMapper.readTree(response.body().string());
             JsonNode valuesNode = jsonResponse.get("values");
+            List<String> unsuccessfulMerges = new ArrayList<>();
             if (valuesNode.isArray()) {
-                // The following logic assumes that you need to check the automerge status
-                return objectMapper.convertValue(valuesNode, objectMapper.getTypeFactory().constructCollectionType(List.class, JsonNode.class))
-                        .stream()
-                        .filter(pr -> !pr.get("merged").asBoolean()) // Adjust this based on actual data
-                        .map(pr -> pr.get("title").asText() + " failed to merge.")
-                        .collect(Collectors.toList());
-            } else {
-                return List.of();
-            }
-        }
-    }
-}
+                for (JsonNode pr : v
