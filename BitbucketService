@@ -1,0 +1,82 @@
+package com.example.demo.service;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Service
+public class BitbucketService {
+
+    @Value("${bitbucket.token}")
+    private String bitbucketToken;
+
+    @Value("${repository.owner}")
+    private String repoOwner;
+
+    @Value("${repository.name}")
+    private String repoName;
+
+    private final OkHttpClient client = new OkHttpClient();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private Request createRequest(String url) {
+        return new Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer " + bitbucketToken)
+                .build();
+    }
+
+    public List<String> getOpenPullRequests() throws IOException {
+        String url = String.format("https://api.bitbucket.org/2.0/repositories/%s/%s/pullrequests?q=state=\"OPEN\"", repoOwner, repoName);
+        Request request = createRequest(url);
+        try (Response response = client.newCall(request).execute()) {
+            JsonNode jsonResponse = objectMapper.readTree(response.body().string());
+            return objectMapper.convertValue(jsonResponse.get("values"), objectMapper.getTypeFactory().constructCollectionType(List.class, JsonNode.class))
+                    .stream()
+                    .map(pr -> pr.get("title").asText() + " - " + pr.get("links").get("html").get("href").asText())
+                    .collect(Collectors.toList());
+        }
+    }
+
+    public List<String> getMergedPullRequests() throws IOException {
+        String url = String.format("https://api.bitbucket.org/2.0/repositories/%s/%s/pullrequests?q=state=\"MERGED\"", repoOwner, repoName);
+        Request request = createRequest(url);
+        try (Response response = client.newCall(request).execute()) {
+            JsonNode jsonResponse = objectMapper.readTree(response.body().string());
+            return objectMapper.convertValue(jsonResponse.get("values"), objectMapper.getTypeFactory().constructCollectionType(List.class, JsonNode.class))
+                    .stream()
+                    .map(pr -> pr.get("title").asText() + " - " + pr.get("links").get("html").get("href").asText())
+                    .collect(Collectors.toList());
+        }
+    }
+
+    public List<String> compareBranches(String baseBranch, String compareBranch) throws IOException {
+        String url = String.format("https://api.bitbucket.org/2.0/repositories/%s/%s/compare/%s...%s", repoOwner, repoName, baseBranch, compareBranch);
+        Request request = createRequest(url);
+        try (Response response = client.newCall(request).execute()) {
+            JsonNode jsonResponse = objectMapper.readTree(response.body().string());
+            return objectMapper.convertValue(jsonResponse.get("diffs").get("values"), objectMapper.getTypeFactory().constructCollectionType(List.class, JsonNode.class))
+                    .stream()
+                    .map(diff -> diff.get("diff").asText())
+                    .collect(Collectors.toList());
+        }
+    }
+
+    public List<String> getUnsuccessfulMergeDetails() throws IOException {
+        String url = String.format("https://api.bitbucket.org/2.0/repositories/%s/%s/pullrequests?q=state=\"OPEN\" AND automerge=\"true\"", repoOwner, repoName);
+        Request request = createRequest(url);
+        try (Response response = client.newCall(request).execute()) {
+            JsonNode jsonResponse = objectMapper.readTree(response.body().string());
+            // Additional logic needed to find unsuccessful merges
+            return List.of(); // Placeholder
+        }
+    }
+}
