@@ -1,0 +1,39 @@
+package com.example.demo.controller;
+
+import com.example.demo.service.BitbucketService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.IOException;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/bitbucket")
+public class BitbucketController {
+
+    @Autowired
+    private BitbucketService bitbucketService;
+
+    @GetMapping("/open-pull-requests")
+    public List<String> getOpenPullRequests() throws IOException {
+        return bitbucketService.getOpenPullRequests();
+    }
+
+    @GetMapping("/merged-pull-requests")
+    public List<String> getMergedPullRequests() throws IOException {
+        return bitbucketService.getMergedPullRequests();
+    }
+
+    @GetMapping("/compare-branches")
+    public List<String> compareBranches(@RequestParam String baseBranch, @RequestParam String compareBranch) throws IOException {
+        return bitbucketService.compareBranches(baseBranch, compareBranch);
+    }
+
+    @GetMapping("/unsuccessful-merges")
+    public List<String> getUnsuccessfulMergeDetails() throws IOException {
+        return bitbucketService.getUnsuccessfulMergeDetails();
+    }
+}
